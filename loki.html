@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Bike Pass QR</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f0f4c3;
+            text-align: center;
+            padding: 50px;
+        }
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            display: inline-block;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px 0;
+            width: 80%;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #558b2f;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #33691e;
+        }
+        #qrcode {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Smart Bike Pass System</h2>
+    <input type="text" id="name" placeholder="Your Name">
+    <input type="text" id="bike" placeholder="Bike Number">
+    <button onclick="requestPass()">Request Pass</button>
+    <div id="status"></div>
+    <div id="qrcode"></div>
+    <hr>
+    <h3>Admin Panel</h3>
+    <button onclick="approvePass()">Approve Last Request</button>
+    <div id="adminStatus"></div>
+</div>
+
+<!-- QR Code Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+let lastRequest = null;
+
+function requestPass() {
+    const name = document.getElementById('name').value.trim();
+    const bike = document.getElementById('bike').value.trim();
+    const statusDiv = document.getElementById('status');
+    const qrDiv = document.getElementById('qrcode');
+    qrDiv.innerHTML = ''; // Clear old QR
+
+    if (!name || !bike) {
+        statusDiv.innerText = "Please fill all fields!";
+        statusDiv.style.color = "red";
+        return;
+    }
+
+    lastRequest = { name, bike, status: 'Pending', qr: '' };
+    statusDiv.innerText = "Pass requested! Waiting for admin approval...";
+    statusDiv.style.color = "orange";
+}
+
+function approvePass() {
+    const adminDiv = document.getElementById('adminStatus');
+    const statusDiv = document.getElementById('status');
+    const qrDiv = document.getElementById('qrcode');
+
+    if (!lastRequest) {
+        adminDiv.innerText = "No pending requests!";
+        adminDiv.style.color = "red";
+        return;
+    }
+
+    // Approve the pass
+    lastRequest.status = 'Approved';
+    lastRequest.qr = `Name:${lastRequest.name}|Bike:${lastRequest.bike}|Pass:APPROVED|${Date.now()}`;
+
+    // Generate QR Code
+    new QRCode(qrDiv, {
+        text: lastRequest.qr,
+        width: 180,
+        height: 180,
+        colorDark : "#33691e",
+        colorLight : "#ffffff",
+    });
+
+    statusDiv.innerText = "Pass Approved! Show this QR at checkpoint.";
+    statusDiv.style.color = "green";
+    adminDiv.innerText = "Last request approved!";
+    adminDiv.style.color = "green";
+}
+</script>
+
+</body>
+</html>
