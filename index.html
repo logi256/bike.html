@@ -1,164 +1,98 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Smart Bike Pass System</title>
-    <style>
-        body {
-            font-family: Arial;
-            background: url('https://images.unsplash.com/photo-1600880292231-0c6cba1df2f7?auto=format&fit=crop&w=1470&q=80') no-repeat center center fixed;
-            background-size: cover;
-            text-align: center;
-            padding: 50px;
-        }
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 25px;
-            border-radius: 12px;
-            display: inline-block;
-            box-shadow: 0 0 15px rgba(0,0,0,0.3);
-            width: 380px;
-        }
-        input, button {
-            padding: 10px;
-            margin: 8px 0;
-            width: 90%;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background-color: #558b2f;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #33691e;
-        }
-        #qrcode {
-            margin-top: 20px;
-        }
-        h2, h3 {
-            color: #004d40;
-        }
-    </style>
+<title>Smart Bike Pass System</title>
+<style>
+body,html{margin:0;padding:0;font-family:Arial;height:100%}
+.page{display:none;height:100%;background-size:cover;background-position:center}
+button,input{padding:10px;margin:8px;width:90%;border-radius:5px;border:1px solid #ccc}
+button{background:#558b2f;color:white;border:none}
+.container{background:rgba(255,255,255,0.95);padding:25px;border-radius:12px;width:350px;margin:auto;margin-top:80px;text-align:center}
+#front{display:flex;justify-content:center;align-items:center;background-image:url('https://images.unsplash.com/photo-1558980664-10ea31d08b3a')}
+#studentPage,#adminLogin,#adminPage{background-image:url('https://images.unsplash.com/photo-1558980664-10ea31d08b3a')}
+h1,h2{color:#004d40}
+#qrcode{margin-top:15px}
+</style>
 </head>
 <body>
 
+<div id="front" class="page" style="display:flex">
 <div class="container">
-    <h2>Smart Bike Pass</h2>
+<h1>Smart Bike Pass</h1>
+<button onclick="openStudent()">Student</button>
+<button onclick="openAdminLogin()">Admin</button>
+</div>
+</div>
 
-    <input type="text" id="name" placeholder="Student Name">
-    <input type="text" id="bike" placeholder="Bike Number">
-    <input type="text" id="license" placeholder="Driving License No">
-    <input type="text" id="insurance" placeholder="Insurance Owner Name">
-    <input type="date" id="insuranceDate" placeholder="Insurance Valid Date">
+<div id="studentPage" class="page">
+<div class="container">
+<h2>Student Pass Request</h2>
+<input id="sname" placeholder="Student Name">
+<input id="bike" placeholder="Bike Number">
+<input id="license" placeholder="License Number">
+<input id="insOwner" placeholder="Insurance Owner">
+<input type="date" id="insDate">
+<button onclick="requestPass()">Request Pass</button>
+<div id="sstatus"></div>
+<div id="qrcode"></div>
+<button onclick="logout()">Logout</button>
+</div>
+</div>
 
-    <button onclick="requestPass()">Request Pass</button>
+<div id="adminLogin" class="page">
+<div class="container">
+<h2>Admin Login</h2>
+<input id="auser" placeholder="Username">
+<input id="apass" type="password" placeholder="Password">
+<button onclick="adminLogin()">Login</button>
+<div id="aloginStatus"></div>
+<button onclick="logout()">Back</button>
+</div>
+</div>
 
-    <div id="status"></div>
-    <div id="qrcode"></div>
-
-    <hr>
-
-    <h3>Admin Panel</h3>
-    <div id="loginDiv">
-        <input type="text" id="adminUser" placeholder="Admin Username">
-        <input type="password" id="adminPass" placeholder="Admin Password">
-        <button onclick="loginAdmin()">Login</button>
-    </div>
-
-    <div id="adminPanel" style="display:none;">
-        <button onclick="approvePass()">Approve Pass & Generate QR</button>
-        <button onclick="logoutAdmin()">Logout</button>
-        <div id="adminStatus"></div>
-    </div>
+<div id="adminPage" class="page">
+<div class="container">
+<h2>Admin Approval</h2>
+<button onclick="approvePass()">Approve & Generate QR</button>
+<div id="astatus"></div>
+<button onclick="logout()">Logout</button>
+</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
-let requestData = null;
-let isAdminLoggedIn = false;
-const adminCredentials = { username: "admin", password: "admin123" };
+let data=null
 
-function requestPass() {
-    const name = document.getElementById('name').value.trim();
-    const bike = document.getElementById('bike').value.trim();
-    const license = document.getElementById('license').value.trim();
-    const insurance = document.getElementById('insurance').value.trim();
-    const insuranceDate = document.getElementById('insuranceDate').value.trim();
-    const status = document.getElementById('status');
-    document.getElementById('qrcode').innerHTML = '';
-
-    if (!name || !bike || !license || !insurance || !insuranceDate) {
-        status.innerText = "Fill all details!";
-        status.style.color = "red";
-        return;
-    }
-
-    requestData = { name, bike, license, insurance, insuranceDate };
-    status.innerText = "Request submitted. Waiting for admin approval...";
-    status.style.color = "orange";
+function hideAll(){
+document.querySelectorAll('.page').forEach(p=>p.style.display='none')
 }
 
-function loginAdmin() {
-    const user = document.getElementById('adminUser').value.trim();
-    const pass = document.getElementById('adminPass').value.trim();
-    const loginDiv = document.getElementById('loginDiv');
-    const adminPanel = document.getElementById('adminPanel');
-    const adminStatus = document.getElementById('adminStatus');
+function openStudent(){hideAll();studentPage.style.display='block'}
+function openAdminLogin(){hideAll();adminLogin.style.display='block'}
+function logout(){hideAll();front.style.display='flex'}
 
-    if(user === adminCredentials.username && pass === adminCredentials.password) {
-        isAdminLoggedIn = true;
-        loginDiv.style.display = 'none';
-        adminPanel.style.display = 'block';
-        adminStatus.innerText = "Logged in successfully!";
-        adminStatus.style.color = "green";
-    } else {
-        adminStatus.innerText = "Invalid credentials!";
-        adminStatus.style.color = "red";
-    }
+function requestPass(){
+let n=sname.value,b=bike.value,l=license.value,i=insOwner.value,d=insDate.value
+if(!n||!b||!l||!i||!d){sstatus.innerText="Fill all details";return}
+data={n,b,l,i,d}
+sstatus.innerText="Waiting for admin approval"
 }
 
-function logoutAdmin() {
-    isAdminLoggedIn = false;
-    document.getElementById('loginDiv').style.display = 'block';
-    document.getElementById('adminPanel').style.display = 'none';
-    document.getElementById('adminStatus').innerText = "Logged out successfully!";
-    document.getElementById('adminStatus').style.color = "orange";
+function adminLogin(){
+if(auser.value==="admin"&&apass.value==="admin123"){
+hideAll();adminPage.style.display='block'
+}else aloginStatus.innerText="Invalid Login"
 }
 
-function approvePass() {
-    if(!isAdminLoggedIn) return;
-
-    const adminStatus = document.getElementById('adminStatus');
-    const status = document.getElementById('status');
-    const qrDiv = document.getElementById('qrcode');
-
-    if (!requestData) {
-        adminStatus.innerText = "No request found!";
-        adminStatus.style.color = "red";
-        return;
-    }
-
-    qrDiv.innerHTML = '';
-    const qrText =
-        `Name: ${requestData.name}\n` +
-        `Bike: ${requestData.bike}\n` +
-        `License: ${requestData.license}\n` +
-        `Insurance Owner: ${requestData.insurance}\n` +
-        `Insurance Valid Date: ${requestData.insuranceDate}\n` +
-        `Status: APPROVED`;
-
-    new QRCode(qrDiv, {
-        text: qrText,
-        width: 180,
-        height: 180
-    });
-
-    status.innerText = "Pass Approved! Show QR at gate.";
-    status.style.color = "green";
-    adminStatus.innerText = "Approved Successfully";
-    adminStatus.style.color = "green";
+function approvePass(){
+if(!data){astatus.innerText="No request";return}
+qrcode.innerHTML=""
+new QRCode(qrcode,{
+text:`Name:${data.n}\nBike:${data.b}\nLicense:${data.l}\nInsurance:${data.i}\nValid:${data.d}\nAPPROVED`,
+width:180,height:180
+})
+astatus.innerText="Approved Successfully"
+sstatus.innerText="Pass Approved"
 }
 </script>
 
