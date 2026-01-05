@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Smart Bike Pass System</title>
+<style>
+body{
+    font-family: Arial;
+    background:url('https://images.unsplash.com/photo-1503376780353-7e6692767b70') no-repeat center;
+    background-size:cover;
+    text-align:center;
+    padding:40px;
+}
+.box{
+    background:rgba(255,255,255,0.95);
+    width:380px;
+    margin:auto;
+    padding:20px;
+    border-radius:10px;
+}
+input,select,button{
+    width:90%;
+    padding:10px;
+    margin:6px;
+}
+button{
+    background:#2e7d32;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+button:hover{background:#1b5e20}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div class="box" id="loginPage">
+    <h2>Login</h2>
+    <select id="role">
+        <option value="student">Student</option>
+        <option value="admin">Admin</option>
+    </select><br><br>
+    <input id="user" placeholder="Username">
+    <input id="pass" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="loginMsg" style="color:red"></p>
+</div>
+
+<!-- STUDENT DASHBOARD -->
+<div class="box hidden" id="studentPage">
+    <h2>Student Dashboard</h2>
+    <input id="name" placeholder="Student Name">
+    <input id="mobile" placeholder="Mobile Number">
+    <input id="bike" placeholder="Bike Number">
+    <input id="license" placeholder="License Number">
+    <input id="insurance" placeholder="Insurance Owner">
+    <input type="date" id="insuranceDate">
+    <button onclick="requestPass()">Request Pass</button>
+    <p id="status" style="color:blue"></p>
+    <div id="studentQRCode"></div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div class="box hidden" id="adminPage">
+    <h2>Admin Dashboard</h2>
+    <p>Pending Request:</p>
+    <div id="requestInfo" style="text-align:left;margin:10px 0;"></div>
+    <button onclick="approve()">Approve Pass</button>
+    <p id="adminStatus" style="color:green"></p>
+</div>
+
+<!-- Shared Logout -->
+<div class="box hidden" id="logoutBox">
+    <button onclick="logout()">Logout</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+let requestData = null;
+let studentLoggedIn = false;
+
+// Login function
+function login(){
+    let role = document.getElementById("role").value;
+    let u = document.getElementById("user").value;
+    let p = document.getElementById("pass").value;
+
+    if(role=="student" && u=="student" && p=="1234"){
+        showDashboard("studentPage");
+        studentLoggedIn = true;
+    } else if(role=="admin" && u=="admin" && p=="admin123"){
+        showDashboard("adminPage");
+        displayRequest();
+    } else {
+        document.getElementById("loginMsg").innerText="Invalid Login";
+    }
+}
+
+// Show dashboard and logout button
+function showDashboard(page){
+    document.getElementById("loginPage").classList.add("hidden");
+    document.getElementById("studentPage").classList.add("hidden");
+    document.getElementById("adminPage").classList.add("hidden");
+    document.getElementById(page).classList.remove("hidden");
+    document.getElementById("logoutBox").classList.remove("hidden");
+}
+
+// Logout function
+function logout(){
+    document.getElementById("loginPage").classList.remove("hidden");
+    document.getElementById("studentPage").classList.add("hidden");
+    document.getElementById("adminPage").classList.add("hidden");
+    document.getElementById("logoutBox").classList.add("hidden");
+    document.getElementById("status").innerText = "";
+    document.getElementById("adminStatus").innerText = "";
+    document.getElementById("studentQRCode").innerHTML = "";
+    document.getElementById("requestInfo").innerText = "";
+    studentLoggedIn = false;
+}
+
+// Student sends pass request
+function requestPass(){
+    let studentName = document.getElementById("name").value;
+    let mobile = document.getElementById("mobile").value;
+    let bikeNum = document.getElementById("bike").value;
+    let licenseNum = document.getElementById("license").value;
+    let insuranceOwner = document.getElementById("insurance").value;
+    let insuranceDate = document.getElementById("insuranceDate").value;
+
+    if(!studentName || !mobile || !bikeNum || !licenseNum || !insuranceOwner || !insuranceDate){
+        alert("Please fill all fields!");
+        return;
+    }
+
+    requestData = {
+        name: studentName,
+        mobile: mobile,
+        bike: bikeNum,
+        license: licenseNum,
+        insurance: insuranceOwner,
+        date: insuranceDate
+    };
+
+    document.getElementById("status").innerText = "Request Sent. Waiting for Admin Approval";
+    alert("Pass request sent to Admin!");
+    document.getElementById("studentQRCode").innerHTML = "";
+}
+
+// Display pending request in admin dashboard
+function displayRequest(){
+    let infoDiv = document.getElementById("requestInfo");
+    if(requestData){
+        infoDiv.innerHTML = `
+        Name: ${requestData.name}<br>
+        Mobile: ${requestData.mobile}<br>
+        Bike: ${requestData.bike}<br>
+        License: ${requestData.license}<br>
+        Insurance: ${requestData.insurance}<br>
+        Valid Until: ${requestData.date}
+        `;
+    } else {
+        infoDiv.innerText = "No pending requests.";
+    }
+}
+
+// Admin approves the pass and generates QR code
+function approve(){
+    if(!requestData){
+        document.getElementById("adminStatus").innerText = "No Request Found";
+        return;
+    }
+
+    let qrDiv = document.getElementById("studentQRCode");
+    qrDiv.innerHTML = "";
+    new QRCode(qrDiv, {
+        text: `Name: ${requestData.name}
+Mobile: ${requestData.mobile}
+Bike: ${requestData.bike}
+License: ${requestData.license}
+Insurance: ${requestData.insurance}
+Valid: ${requestData.date}
+STATUS: APPROVED`,
+        width:180,
+        height:180
+    });
+
+    document.getElementById("adminStatus").innerText = "Pass Approved Successfully!";
+    if(studentLoggedIn){
+        document.getElementById("status").innerText = "Your pass has been approved!";
+    }
+
+    requestData = null;
+    displayRequest();
+}
+</script>
+
+</body>
+</html>
