@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart Bike Pass System</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div class="box" id="loginPage">
+    <h2>Login</h2>
+    <select id="role">
+        <option value="student">Student</option>
+        <option value="admin">Admin</option>
+    </select><br><br>
+    <input id="user" placeholder="Username">
+    <input id="pass" type="password" placeholder="Password">
+    <input id="mobileLogin" placeholder="Mobile Number">
+    <button onclick="login()">Login</button>
+    <p id="loginMsg" style="color:red"></p>
+</div>
+
+<!-- STUDENT DASHBOARD -->
+<div class="box hidden" id="studentPage">
+    <h2>Student Dashboard</h2>
+    <input id="name" placeholder="Student Name">
+    <input id="mobile" placeholder="Mobile Number">
+    <input id="bike" placeholder="Bike Number">
+    <input id="license" placeholder="License Number">
+    <input id="insurance" placeholder="Insurance Owner">
+    <input type="date" id="insuranceDate">
+    <button onclick="requestPass()">Request Pass</button>
+    <p id="status" style="color:blue"></p>
+    
+    <h3>My Requests & Approved Passes</h3>
+    <div id="studentHistory"></div>
+    
+    <div id="studentQRCode"></div>
+    <button id="downloadQR" class="hidden" onclick="downloadQR()">Download QR</button>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div class="box hidden" id="adminPage">
+    <h2>Admin Dashboard</h2>
+    <p>Filter: 
+        <select id="filter" onchange="displayRequest()">
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+        </select>
+    </p>
+    <div id="requestInfo" style="text-align:left;margin:10px 0;"></div>
+    <p id="adminStatus" style="color:green"></p>
+</div>
+
+<!-- Shared Logout -->
+<div class="box hidden" id="logoutBox">
+    <button onclick="logout()">Logout</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

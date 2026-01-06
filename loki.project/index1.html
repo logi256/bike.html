@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Smart Bike Pass System</title>
+<style>
+body{
+    font-family: Arial;
+    background:url('https://images.unsplash.com/photo-1503376780353-7e6692767b70') no-repeat center;
+    background-size:cover;
+    text-align:center;
+    padding:40px;
+}
+.box{
+    background:rgba(255,255,255,0.95);
+    width:450px;
+    margin:auto;
+    padding:20px;
+    border-radius:10px;
+}
+input,select,button{
+    width:90%;
+    padding:10px;
+    margin:6px;
+}
+button{
+    background:#2e7d32;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+button:hover{background:#1b5e20}
+.hidden{display:none;}
+.request-box{border:1px solid #ccc; padding:10px; margin:5px; border-radius:5px;}
+.approved{background:#e0ffe0;}
+.rejected{background:#ffe0e0;}
+.expired{background:#fff0e0;}
+#studentHistory{margin-top:20px; text-align:left;}
+#studentHistory div{border:1px solid #ccc; padding:5px; margin:5px; border-radius:5px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div class="box" id="loginPage">
+    <h2>Login</h2>
+    <select id="role">
+        <option value="student">Student</option>
+        <option value="admin">Admin</option>
+    </select><br><br>
+    <input id="user" placeholder="Username">
+    <input id="pass" type="password" placeholder="Password">
+    <input id="mobileLogin" placeholder="Mobile Number">
+    <button onclick="login()">Login</button>
+    <p id="loginMsg" style="color:red"></p>
+</div>
+
+<!-- STUDENT DASHBOARD -->
+<div class="box hidden" id="studentPage">
+    <h2>Student Dashboard</h2>
+    <input id="name" placeholder="Student Name">
+    <input id="mobile" placeholder="Mobile Number">
+    <input id="bike" placeholder="Bike Number">
+    <input id="license" placeholder="License Number">
+    <input id="insurance" placeholder="Insurance Owner">
+    <input type="date" id="insuranceDate">
+    <button onclick="requestPass()">Request Pass</button>
+    <p id="status" style="color:blue"></p>
+    
+    <h3>My Requests & Approved Passes</h3>
+    <div id="studentHistory"></div>
+    
+    <div id="studentQRCode"></div>
+    <button id="downloadQR" class="hidden" onclick="downloadQR()">Download QR</button>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div class="box hidden" id="adminPage">
+    <h2>Admin Dashboard</h2>
+    <p>Filter: 
+        <select id="filter" onchange="displayRequest()">
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+        </select>
+    </p>
+    <div id="requestInfo" style="text-align:left;margin:10px 0;"></div>
+    <p id="adminStatus" style="color:green"></p>
+</div>
+
+<!-- Shared Logout -->
+<div class="box hidden" id="logoutBox">
+    <button onclick="logout()">Logout</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+let requests = [];
+let studentLoggedIn = false;
+let studentMobile = "";
+
+// Login function
+function login(){
+    let role = document.getElementById("role").value;
+    let u = document.getElementById("user").value;
+    let p = document.getElementById("pass").value;
+    let mobileLogin = document.getElementById("mobileLogin").value;
+
+    if(role=="student" && u=="student" && p=="1234"){
+        studentLoggedIn = true;
+        studentMobile = mobileLogin;
+        showDashboard("studentPage");
+        renderStudentHistory();
+    } else if(role=="admin" && u=="admin" && p=="admin123"){
+        showDashboard("adminPage");
+        displayRequest();
+    } else {
+        document.getElementById("loginMsg").innerText="Invalid Login";
+    }
+}
+
+// Show dashboard and logout button
+function showDashboard(page){
+    document.getElementById("loginPage").classList.add("hidden");
+    document.getElementById("studentPage").classList.add("hidden");
+    document.getElementById("adminPage").classList.add("hidden");
+    document.getElementById(page).classList.remove("hidden");
+    document.getElementById("logoutBox").classList.remove("hidden");
+}
+
+// Logout
+function logout(){
+    document.getElementById("loginPage").classList.remove("hidden");
+    document.getElementById("studentPage").classList.add("hidden");
+    document.getElementById("adminPage").classList.add("hidden");
+    document.getElementById("logoutBox").classList.add("hidden");
+    document.getElementById("status").innerText = "";
+    document.getElementById("studentHistory").innerHTML = "";
+    document.getElementById("studentQRCode").innerHTML = "";
+    document.getElementById("downloadQR").classList.add("hidden");
+    document.getElementById("requestInfo").innerText = "";
+    studentLoggedIn = false;
+    studentMobile = "";
+}
+
+// Validate mobile
+function isValidMobile(mobile){
+    return /^\d{10}$/.test(mobile);
+}
+
+// Student request
+function requestPass(){
+    let studentName = document.getElementById("name").value;
+    let mobile = document.getElementById("mobile").value;
+    let bikeNum = document.getElementById("bike").value;
+    let licenseNum = document.getElementById("license").value;
+    let insuranceOwner = document.getElementById("insurance").value;
+    let insuranceDate = document.getElementById("insuranceDate").value;
+
+    if(!studentName || !mobile || !bikeNum || !licenseNum || !insuranceOwner || !insuranceDate){
+        alert("Please fill all fields!");
+        return;
+    }
+    if(!isValidMobile(mobile)){
+        alert("Enter valid 10-digit mobile number!");
+        return;
+    }
+
+    let request = {
+        name: studentName,
+        mobile: mobile,
+        bike: bikeNum,
+        license: licenseNum,
+        insurance: insuranceOwner,
+        date: insuranceDate,
+        approved: false,
+        rejected: false
+    };
+    requests.push(request);
+    alert("Pass request sent to Admin!");
+    renderStudentHistory();
+}
+
+// Render all requests of the logged-in student
+function renderStudentHistory(){
+    let historyDiv = document.getElementById("studentHistory");
+    historyDiv.innerHTML = "";
+    let myRequests = requests.filter(r => r.mobile === studentMobile);
+    if(myRequests.length===0){
+        historyDiv.innerText = "No requests yet.";
+        return;
+    }
+    myRequests.forEach((r,index)=>{
+        let today = new Date().toISOString().split('T')[0];
+        let expiredClass = r.date < today ? "expired" : "";
+        let approvedClass = r.approved ? "approved" : "";
+        let rejectedClass = r.rejected ? "rejected" : "";
+        historyDiv.innerHTML += `
+        <div class="${approvedClass} ${rejectedClass} ${expiredClass}">
+        Name: ${r.name}<br>
+        Bike: ${r.bike}<br>
+        License: ${r.license}<br>
+        Insurance: ${r.insurance}<br>
+        Valid Until: ${r.date}<br>
+        Status: ${r.approved ? "APPROVED" : r.rejected ? "REJECTED" : "PENDING"}<br>
+        ${r.approved ? `<button onclick="showStudentQRCode(${index})">View QR</button>` : ""}
+        </div>`;
+    });
+}
+
+// Show QR code for student pass
+function showStudentQRCode(index){
+    let r = requests.filter(r=>r.mobile===studentMobile)[index];
+    let qrDiv = document.getElementById("studentQRCode");
+    qrDiv.innerHTML = "";
+    new QRCode(qrDiv, {
+        text: `Name: ${r.name}\nMobile: ${r.mobile}\nBike: ${r.bike}\nLicense: ${r.license}\nInsurance: ${r.insurance}\nValid: ${r.date}\nSTATUS: APPROVED`,
+        width:180,
+        height:180
+    });
+    document.getElementById("downloadQR").classList.remove("hidden");
+}
+
+// Download QR
+function downloadQR(){
+    let qr = document.querySelector("#studentQRCode canvas");
+    if(!qr) return;
+    let link = document.createElement("a");
+    link.href = qr.toDataURL();
+    link.download = "bike_pass_qr.png";
+    link.click();
+}
+
+// Admin functions
+function displayRequest(){
+    let filter = document.getElementById("filter").value;
+    let infoDiv = document.getElementById("requestInfo");
+    infoDiv.innerHTML = "";
+    let filtered = requests.filter(r => {
+        if(filter=="all") return true;
+        if(filter=="pending") return !r.approved && !r.rejected;
+        if(filter=="approved") return r.approved;
+        if(filter=="rejected") return r.rejected;
+    });
+    if(filtered.length===0){
+        infoDiv.innerText = "No requests found.";
+        return;
+    }
+    filtered.forEach((r,index)=>{
+        let today = new Date().toISOString().split('T')[0];
+        let expiredClass = r.date < today ? "expired" : "";
+        let approvedClass = r.approved ? "approved" : "";
+        let rejectedClass = r.rejected ? "rejected" : "";
+        let viewButton = r.approved ? `<button onclick="viewApprovedPass(${index})">View Pass</button>` : "";
+        infoDiv.innerHTML += `
+        <div class="request-box ${approvedClass} ${rejectedClass} ${expiredClass}">
+        Name: ${r.name}<br>
+        Mobile: ${r.mobile}<br>
+        Bike: ${r.bike}<br>
+        License: ${r.license}<br>
+        Insurance: ${r.insurance}<br>
+        Valid Until: ${r.date}<br>
+        Status: ${r.approved ? "APPROVED" : r.rejected ? "REJECTED" : "PENDING"}<br>
+        ${!r.approved && !r.rejected ? `<button onclick="approve(${index})">Approve</button> <button onclick="reject(${index})">Reject</button>` : viewButton}
+        </div>`;
+    });
+}
+
+// Admin approve/reject/view
+function approve(index){requests[index].approved=true;requests[index].rejected=false;displayRequest(); if(studentLoggedIn) renderStudentHistory();}
+function reject(index){requests[index].rejected=true;requests[index].approved=false;displayRequest(); if(studentLoggedIn) renderStudentHistory();}
+function viewApprovedPass(index){
+    let r=requests[index];
+    let qrDiv=document.getElementById("adminQRCode");
+    if(!qrDiv){qrDiv=document.createElement("div"); qrDiv.id="adminQRCode"; qrDiv.style.margin="10px auto"; qrDiv.style.width="200px"; qrDiv.style.height="200px"; document.getElementById("adminPage").appendChild(qrDiv);}
+    qrDiv.innerHTML="";
+    new QRCode(qrDiv, {text:`Name: ${r.name}\nMobile: ${r.mobile}\nBike: ${r.bike}\nLicense: ${r.license}\nInsurance: ${r.insurance}\nValid: ${r.date}\nSTATUS: APPROVED`, width:180, height:180});
+    alert(`QR Code for ${r.name} displayed below. Give this to the student.`);
+}
+</script>
+
+</body>
+</html>

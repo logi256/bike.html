@@ -1,0 +1,33 @@
+body{
+    font-family: Arial;
+    background:url('https://images.unsplash.com/photo-1503376780353-7e6692767b70') no-repeat center;
+    background-size:cover;
+    text-align:center;
+    padding:40px;
+}
+.box{
+    background:rgba(255,255,255,0.95);
+    width:450px;
+    margin:auto;
+    padding:20px;
+    border-radius:10px;
+}
+input,select,button{
+    width:90%;
+    padding:10px;
+    margin:6px;
+}
+button{
+    background:#2e7d32;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+button:hover{background:#1b5e20}
+.hidden{display:none;}
+.request-box{border:1px solid #ccc; padding:10px; margin:5px; border-radius:5px;}
+.approved{background:#e0ffe0;}
+.rejected{background:#ffe0e0;}
+.expired{background:#fff0e0;}
+#studentHistory{margin-top:20px; text-align:left;}
+#studentHistory div{border:1px solid #ccc; padding:5px; margin:5px; border-radius:5px;}
